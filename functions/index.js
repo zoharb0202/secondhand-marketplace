@@ -8,9 +8,9 @@ const admin = require('firebase-admin');
 let _legacyStripeCfg;
 try { _legacyStripeCfg = functions.config().stripe; } catch (_) { _legacyStripeCfg = undefined; }
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY || _legacyStripeCfg?.secret_key;
-if ((!stripeSecretKey || stripeSecretKey === 'sk_test_dummy') && !process.env.FUNCTIONS_EMULATOR) {
-  throw new Error(
-      'Stripe secret key is not configured. Set STRIPE_SECRET_KEY in functions/.env before deploying.');
+const stripeConfigured = !!stripeSecretKey && !/^sk_test_(dummy|your_key_here)$/.test(stripeSecretKey);
+if (!stripeConfigured) {
+  console.warn('Stripe is not configured: card payments are disabled, pay-on-pickup still works.');
 }
 const stripe = require('stripe')(stripeSecretKey || 'sk_test_dummy');
 const aiSearch = require('./src/aiSearch');

@@ -183,6 +183,15 @@ class _ProductCardState extends State<ProductCard>
                         ),
                       ),
 
+                    if (widget.product.isDemo)
+                      Positioned(
+                        top: _isSellerAvailableNow && !widget.product.isSold
+                            ? 38
+                            : 10,
+                        left: 10,
+                        child: const DemoItemChip(),
+                      ),
+
                     if (_isSellerAvailableNow && !widget.product.isSold)
                       Positioned(
                         top: 10,
@@ -379,6 +388,29 @@ class _CardTagBadge extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class DemoItemChip extends StatelessWidget {
+  const DemoItemChip({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.62),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: const Text(
+        'מוצר לדוגמה',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }

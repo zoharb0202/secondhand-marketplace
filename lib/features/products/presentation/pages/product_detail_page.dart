@@ -502,6 +502,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
                                 );
                               },
                             ),
+                          if (product.isDemo) _DemoNotice(product: product),
                           const SizedBox(height: 8),
                           Text(
                             product.title,
@@ -1059,6 +1060,56 @@ class _InfoRow extends StatelessWidget {
               context,
             ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DemoNotice extends StatelessWidget {
+  final ProductModel product;
+  const _DemoNotice({required this.product});
+
+  @override
+  Widget build(BuildContext context) {
+    final credit = product.imageCredit;
+    final artist = (credit?['artist'] as String?)?.trim();
+    final license = (credit?['license'] as String?)?.trim();
+    final creditLine = [
+      if (artist != null && artist.isNotEmpty) 'צילום: $artist',
+      if (license != null && license.isNotEmpty) license,
+      'Wikimedia Commons',
+    ].join(' · ');
+    return Container(
+      margin: const EdgeInsets.only(top: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: context.altSurface,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'מוצר לדוגמה',
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              color: context.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'זו מודעה לדוגמה בגרסת הדמו של האפליקציה. המוצר, המוכר והמחיר אינם אמיתיים, '
+            'ואפשר לנסות עליו את תהליך ההזמנה בחופשיות.',
+            style: TextStyle(fontSize: 13, color: context.textSecondary),
+          ),
+          if (credit != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              creditLine,
+              style: TextStyle(fontSize: 11, color: context.textTertiary),
+            ),
+          ],
         ],
       ),
     );

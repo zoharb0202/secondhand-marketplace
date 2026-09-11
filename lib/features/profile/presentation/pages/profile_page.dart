@@ -43,6 +43,7 @@ import '../../../alerts/presentation/pages/alerts_page.dart';
 import '../../../alerts/presentation/providers/alert_provider.dart';
 import '../../../storefront/presentation/pages/storefront_editor_page.dart';
 import 'seller_profile_page.dart';
+import '../../../../core/constants/feature_flags.dart';
 
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
@@ -618,7 +619,7 @@ class ProfilePage extends ConsumerWidget {
                       );
                     },
                   ),
-                if (kDebugMode) ...[
+                if (kDebugMode || (FeatureFlags.demoMode && user.isAdmin)) ...[
                   const Divider(),
                   Padding(
                     padding: const EdgeInsets.symmetric(

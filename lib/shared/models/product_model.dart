@@ -68,6 +68,8 @@ class ProductModel {
   final double? retailEstimate;
   final int? bargainDiscountPercent;
   final bool isBargain;
+  final bool isDemo;
+  final Map<String, dynamic>? imageCredit;
 
   ProductModel({
     required this.id,
@@ -111,6 +113,8 @@ class ProductModel {
     this.retailEstimate,
     this.bargainDiscountPercent,
     this.isBargain = false,
+    this.isDemo = false,
+    this.imageCredit,
   });
 
   static GeoPoint _parseGeoPoint(dynamic value) {
@@ -211,6 +215,10 @@ class ProductModel {
       retailEstimate: (data['retailEstimate'] as num?)?.toDouble(),
       bargainDiscountPercent: (data['bargainDiscountPercent'] as num?)?.toInt(),
       isBargain: data['isBargain'] == true,
+      isDemo: data['isDemo'] == true,
+      imageCredit: data['imageCredit'] is Map
+          ? Map<String, dynamic>.from(data['imageCredit'] as Map)
+          : null,
     );
   }
 
@@ -264,6 +272,10 @@ class ProductModel {
       retailEstimate: (data['retailEstimate'] as num?)?.toDouble(),
       bargainDiscountPercent: (data['bargainDiscountPercent'] as num?)?.toInt(),
       isBargain: data['isBargain'] == true,
+      isDemo: data['isDemo'] == true,
+      imageCredit: data['imageCredit'] is Map
+          ? Map<String, dynamic>.from(data['imageCredit'] as Map)
+          : null,
     );
   }
 
@@ -412,6 +424,8 @@ class ProductModel {
       bargainDiscountPercent:
           bargainDiscountPercent ?? this.bargainDiscountPercent,
       isBargain: isBargain ?? this.isBargain,
+      isDemo: isDemo,
+      imageCredit: imageCredit,
     );
   }
 

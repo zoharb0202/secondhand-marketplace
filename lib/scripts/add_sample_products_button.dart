@@ -21,15 +21,27 @@ class _AddSampleProductsButtonState extends State<AddSampleProductsButton> {
 
     try {
       final functions = FirebaseFunctions.instance;
-      final callable = functions.httpsCallable('addSampleProducts');
-      final result = await callable.call();
-
-      final data = result.data as Map<String, dynamic>;
-      setState(() {
-        _result = 'הצלחה! הועלו ${data['uploadCount']} מוצרים';
-        _isLoading = false;
-      });
+      final callable = functions.httpsCallable(
+        'seedDemoCatalog',
+        options: HttpsCallableOptions(timeout: const Duration(minutes: 9)),
+      );
+      var remaining = 1;
+      var rounds = 0;
+      while (remaining > 0 && rounds < 8) {
+        rounds++;
+        final result = await callable.call();
+        final data = Map<String, dynamic>.from(result.data as Map);
+        remaining = (data['remaining'] as num?)?.toInt() ?? 0;
+        if (!mounted) return;
+        setState(() {
+          _result =
+              '${data['products']} מוצרים, ${data['sellers']} מוכרים · '
+              '${remaining > 0 ? 'עוד $remaining תמונות בטעינה…' : 'כל התמונות נטענו'}';
+        });
+      }
+      if (mounted) setState(() => _isLoading = false);
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _result = 'שגיאה: $e';
         _isLoading = false;
@@ -49,7 +61,7 @@ class _AddSampleProductsButtonState extends State<AddSampleProductsButton> {
                   height: 20,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Text('הוסף מוצרים לדוגמא (200+)'),
+              : const Text('טען את קטלוג הדמו'),
         ),
         if (_result != null)
           Padding(padding: const EdgeInsets.all(8.0), child: Text(_result!)),

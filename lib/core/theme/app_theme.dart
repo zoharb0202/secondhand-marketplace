@@ -5,12 +5,19 @@ import '../constants/layout_constants.dart';
 import 'app_colors.dart';
 
 class AppTheme {
-  static const String _fontBody = 'Rubik';
+  static final String? _fontBody = GoogleFonts.ibmPlexSansHebrew().fontFamily;
 
-  static TextStyle _display(TextStyle base) =>
-      GoogleFonts.secularOne(textStyle: base);
+  static TextStyle _display(TextStyle base) => GoogleFonts.miriamLibre(
+    textStyle: base.copyWith(
+      fontWeight: base.fontWeight ?? FontWeight.w700,
+      letterSpacing: base.letterSpacing ?? -0.3,
+    ),
+  );
 
-  static TextStyle _body(TextStyle base) => GoogleFonts.rubik(textStyle: base);
+  static TextStyle _body(TextStyle base) =>
+      GoogleFonts.ibmPlexSansHebrew(textStyle: base);
+
+  static TextStyle display(TextStyle base) => _display(base);
 
   static final SnackBarThemeData _snackBarTheme = SnackBarThemeData(
     behavior: SnackBarBehavior.floating,
@@ -117,7 +124,7 @@ class AppTheme {
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: AppRadius.cardR,
-          side: const BorderSide(color: AppColors.lightBorder, width: 1),
+          side: const BorderSide(color: AppColors.lightBorderLight, width: 1),
         ),
         margin: const EdgeInsets.all(AppSpacing.xs),
       ),
@@ -126,19 +133,19 @@ class AppTheme {
         filled: true,
         fillColor: AppColors.lightSurface,
         border: OutlineInputBorder(
-          borderRadius: AppRadius.cardR,
+          borderRadius: AppRadius.inputR,
           borderSide: const BorderSide(color: AppColors.lightBorder, width: 1),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: AppRadius.cardR,
+          borderRadius: AppRadius.inputR,
           borderSide: const BorderSide(color: AppColors.lightBorder, width: 1),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: AppRadius.cardR,
+          borderRadius: AppRadius.inputR,
           borderSide: const BorderSide(color: AppColors.primary, width: 1.6),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: AppRadius.cardR,
+          borderRadius: AppRadius.inputR,
           borderSide: const BorderSide(color: AppColors.error, width: 1.2),
         ),
         contentPadding: const EdgeInsets.symmetric(
@@ -153,13 +160,14 @@ class AppTheme {
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
           elevation: 0,
+          minimumSize: const Size(64, 52),
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.xl,
             vertical: AppSpacing.md,
           ),
           shape: RoundedRectangleBorder(borderRadius: AppRadius.cardR),
           textStyle: _body(
-            const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+            const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           ),
         ),
       ),
@@ -168,7 +176,7 @@ class AppTheme {
         style: TextButton.styleFrom(
           foregroundColor: AppColors.primary,
           textStyle: _body(
-            const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+            const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
           ),
         ),
       ),
@@ -183,7 +191,7 @@ class AppTheme {
           ),
           shape: RoundedRectangleBorder(borderRadius: AppRadius.cardR),
           textStyle: _body(
-            const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+            const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
           ),
         ),
       ),
@@ -196,7 +204,15 @@ class AppTheme {
 
       chipTheme: ChipThemeData(
         backgroundColor: AppColors.lightSurface,
-        selectedColor: AppColors.primary,
+        selectedColor: AppColors.ink,
+        checkmarkColor: Colors.white,
+        secondaryLabelStyle: _body(
+          const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: Colors.white,
+          ),
+        ),
         side: const BorderSide(color: AppColors.lightBorder, width: 1),
         labelStyle: _body(
           const TextStyle(
@@ -209,7 +225,7 @@ class AppTheme {
           horizontal: AppSpacing.sm,
           vertical: AppSpacing.xs,
         ),
-        shape: RoundedRectangleBorder(borderRadius: AppRadius.chipR),
+        shape: const StadiumBorder(),
       ),
 
       dialogTheme: DialogThemeData(
@@ -250,17 +266,17 @@ class AppTheme {
   }
 
   static ThemeData get darkTheme {
-    const darkBg = Color(0xFF10141F);
-    const darkSurface = Color(0xFF182238);
-    const darkBorder = Color(0xFF2A3550);
-    const cobaltLift = Color(0xFF5B7BFF);
-    const onDark = Color(0xFFEDEFF5);
-    const onDarkSecondary = Color(0xFF9AA4BC);
+    const darkBg = Color(0xFF0D0F10);
+    const darkSurface = Color(0xFF17191B);
+    const darkBorder = Color(0xFF2B2E31);
+    const cobaltLift = Color(0xFF34B886);
+    const onDark = Color(0xFFEDEDEA);
+    const onDarkSecondary = Color(0xFFA2A5A8);
 
     final textTheme = _buildTextTheme(
       onDark,
       onDarkSecondary,
-      const Color(0xFF6B7695),
+      const Color(0xFF6F7376),
     );
 
     return ThemeData(
@@ -269,14 +285,14 @@ class AppTheme {
       fontFamily: _fontBody,
       colorScheme: const ColorScheme.dark(
         primary: cobaltLift,
-        onPrimary: Color(0xFF0A1020),
+        onPrimary: Color(0xFF06140E),
         secondary: AppColors.coral,
         onSecondary: Colors.white,
         tertiary: AppColors.sun,
         surface: darkSurface,
         onSurface: onDark,
-        surfaceContainerHighest: Color(0xFF1E2A44),
-        error: Color(0xFFF07A67),
+        surfaceContainerHighest: Color(0xFF1F2224),
+        error: Color(0xFFE8715C),
         onError: Colors.white,
         outline: darkBorder,
       ),
@@ -308,36 +324,37 @@ class AppTheme {
         filled: true,
         fillColor: darkSurface,
         border: OutlineInputBorder(
-          borderRadius: AppRadius.cardR,
+          borderRadius: AppRadius.inputR,
           borderSide: const BorderSide(color: darkBorder, width: 1),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: AppRadius.cardR,
+          borderRadius: AppRadius.inputR,
           borderSide: const BorderSide(color: darkBorder, width: 1),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: AppRadius.cardR,
+          borderRadius: AppRadius.inputR,
           borderSide: const BorderSide(color: cobaltLift, width: 1.6),
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.md,
           vertical: AppSpacing.md,
         ),
-        hintStyle: _body(const TextStyle(color: Color(0xFF6B7695))),
+        hintStyle: _body(const TextStyle(color: Color(0xFF6F7376))),
       ),
 
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: cobaltLift,
-          foregroundColor: const Color(0xFF0A1020),
+          foregroundColor: const Color(0xFF06140E),
           elevation: 0,
+          minimumSize: const Size(64, 52),
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.xl,
             vertical: AppSpacing.md,
           ),
           shape: RoundedRectangleBorder(borderRadius: AppRadius.cardR),
           textStyle: _body(
-            const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+            const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           ),
         ),
       ),
@@ -346,7 +363,7 @@ class AppTheme {
         style: TextButton.styleFrom(
           foregroundColor: cobaltLift,
           textStyle: _body(
-            const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+            const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
           ),
         ),
       ),
@@ -361,20 +378,28 @@ class AppTheme {
           ),
           shape: RoundedRectangleBorder(borderRadius: AppRadius.cardR),
           textStyle: _body(
-            const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+            const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
           ),
         ),
       ),
 
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
         backgroundColor: cobaltLift,
-        foregroundColor: Color(0xFF0A1020),
+        foregroundColor: Color(0xFF06140E),
         elevation: 0,
       ),
 
       chipTheme: ChipThemeData(
         backgroundColor: darkSurface,
-        selectedColor: cobaltLift,
+        selectedColor: onDark,
+        checkmarkColor: darkBg,
+        secondaryLabelStyle: _body(
+          const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: darkBg,
+          ),
+        ),
         side: const BorderSide(color: darkBorder, width: 1),
         labelStyle: _body(
           const TextStyle(
@@ -387,7 +412,7 @@ class AppTheme {
           horizontal: AppSpacing.sm,
           vertical: AppSpacing.xs,
         ),
-        shape: RoundedRectangleBorder(borderRadius: AppRadius.chipR),
+        shape: const StadiumBorder(),
       ),
 
       dialogTheme: DialogThemeData(

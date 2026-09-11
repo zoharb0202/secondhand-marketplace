@@ -67,7 +67,9 @@ class GradientText extends StatelessWidget {
     final base = style ?? const TextStyle();
     return Text(
       text,
-      style: base.color == null ? base.copyWith(color: AppColors.ink) : base,
+      style: base.color == null
+          ? base.copyWith(color: Theme.of(context).colorScheme.onSurface)
+          : base,
       textAlign: textAlign,
     );
   }

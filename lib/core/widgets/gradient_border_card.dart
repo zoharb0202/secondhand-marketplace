@@ -28,9 +28,10 @@ class GradientBorderCard extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor =
         backgroundColor ??
-        (isDark ? const Color(0xFF182238) : AppColors.surface);
-    final borderColor = isDark ? const Color(0xFF2A3550) : AppColors.border;
-    final shadowColor = isDark ? const Color(0xFF5B7BFF) : AppColors.cobalt;
+        (isDark ? AppColors.darkSurface : AppColors.lightSurface);
+    final borderColor = isDark
+        ? AppColors.darkBorder
+        : AppColors.lightBorderLight;
 
     return Container(
       margin: margin,
@@ -39,10 +40,13 @@ class GradientBorderCard extends StatelessWidget {
         color: bgColor,
         borderRadius: BorderRadius.circular(borderRadius),
         border: Border.all(color: borderColor, width: borderWidth),
-        boxShadow: AppColors.offsetShadow(
-          color: shadowColor,
-          alpha: isDark ? 0.22 : 0.12,
-        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.ink.withValues(alpha: isDark ? 0.30 : 0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: child,
     );

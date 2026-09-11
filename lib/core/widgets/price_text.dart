@@ -10,7 +10,7 @@ Widget priceText(
 }) {
   final numeral = amount.toStringAsFixed(decimals);
   final symbolStyle = (style ?? const TextStyle()).copyWith(
-    fontFamily: GoogleFonts.rubik().fontFamily,
+    fontFamily: GoogleFonts.ibmPlexSansHebrew().fontFamily,
   );
   final numeralSpan = TextSpan(text: numeral, style: style);
   final symbolSpan = TextSpan(

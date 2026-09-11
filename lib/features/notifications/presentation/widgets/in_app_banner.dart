@@ -193,7 +193,7 @@ class _InAppBannerViewState extends State<_InAppBannerView>
                             n.title,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.rubik(
+                            style: GoogleFonts.ibmPlexSansHebrew(
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
                               color: AppColors.textPrimary,
@@ -205,7 +205,7 @@ class _InAppBannerViewState extends State<_InAppBannerView>
                               n.body,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.rubik(
+                              style: GoogleFonts.ibmPlexSansHebrew(
                                 fontSize: 13,
                                 height: 1.3,
                                 color: AppColors.textSecondary,

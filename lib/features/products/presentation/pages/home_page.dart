@@ -5,6 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/theme_colors.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/glass_container.dart';
 import '../../../../core/widgets/gradient_border_card.dart';
 import '../../../../core/widgets/nav_bar_clearance.dart';
@@ -21,10 +22,14 @@ import '../../../notifications/presentation/pages/notifications_page.dart';
 import '../../../../core/services/notification_service.dart'
     show kUnreadNotificationsBadgeCap;
 import '../widgets/product_video_player.dart';
+import '../widgets/product_card.dart';
 import '../widgets/ai_recommendations_section.dart';
 import '../widgets/advanced_filter_sheet.dart';
 import 'product_detail_page.dart';
 import 'product_map_page.dart';
+import 'search_page.dart';
+import '../../../../core/widgets/app_logo.dart';
+import '../../../../core/constants/feature_flags.dart';
 import 'deals_page.dart';
 import '../../../stories/presentation/widgets/stories_bar.dart';
 
@@ -44,7 +49,7 @@ class _HomePageState extends ConsumerState<HomePage>
 
   final PageController _pageController = PageController();
   final ScrollController _gridScrollController = ScrollController();
-  ViewMode _currentViewMode = ViewMode.vertical;
+  ViewMode _currentViewMode = ViewMode.grid;
 
   @override
   void initState() {
@@ -307,11 +312,39 @@ class _HomePageState extends ConsumerState<HomePage>
         backgroundColor: Colors.transparent,
         elevation: 0,
         titleSpacing: 16,
-        title: _FeedSourceToggle(
-          current: feedSource,
-          onChanged: _switchFeedSource,
-          onDark: isVerticalMode,
-        ),
+        title: isVerticalMode
+            ? _FeedSourceToggle(
+                current: feedSource,
+                onChanged: _switchFeedSource,
+                onDark: isVerticalMode,
+              )
+            : Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const AppLogo(markSize: 28, fontSize: 17),
+                  if (FeatureFlags.demoMode) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 7,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: context.hairline),
+                      ),
+                      child: Text(
+                        'דמו',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: context.textSecondary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
         actions: [
           GestureDetector(
             onTap: () {
@@ -380,44 +413,48 @@ class _HomePageState extends ConsumerState<HomePage>
             },
           ),
           const SizedBox(width: 8),
-          GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const DealsPage()),
-              );
-            },
-            child: GlassContainer(
-              borderRadius: BorderRadius.circular(14),
-              blur: 8,
-              padding: const EdgeInsets.all(10),
-              child: Icon(
-                Icons.local_offer_outlined,
-                size: 20,
-                color: context.textPrimary,
+          if (isVerticalMode) ...[
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const DealsPage()),
+                );
+              },
+              child: GlassContainer(
+                borderRadius: BorderRadius.circular(14),
+                blur: 8,
+                padding: const EdgeInsets.all(10),
+                child: Icon(
+                  Icons.local_offer_outlined,
+                  size: 20,
+                  color: context.textPrimary,
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 8),
-          GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const ProductMapPage()),
-              );
-            },
-            child: GlassContainer(
-              borderRadius: BorderRadius.circular(14),
-              blur: 8,
-              padding: const EdgeInsets.all(10),
-              child: Icon(
-                Icons.map_outlined,
-                size: 20,
-                color: context.textPrimary,
+            const SizedBox(width: 8),
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ProductMapPage(),
+                  ),
+                );
+              },
+              child: GlassContainer(
+                borderRadius: BorderRadius.circular(14),
+                blur: 8,
+                padding: const EdgeInsets.all(10),
+                child: Icon(
+                  Icons.map_outlined,
+                  size: 20,
+                  color: context.textPrimary,
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 8),
+            const SizedBox(width: 8),
+          ],
           const _NotificationBellButton(),
           const SizedBox(width: 16),
         ],
@@ -573,6 +610,10 @@ class _HomePageState extends ConsumerState<HomePage>
                       )
                     : _ProductGridView(
                         key: const ValueKey('grid'),
+                        header: HomeGridHeader(
+                          feedSource: feedSource,
+                          onFeedSourceChanged: _switchFeedSource,
+                        ),
                         controller: _gridScrollController,
                         products: products,
                         onNearBottom: _growFeedWindow,
@@ -802,6 +843,184 @@ class _FeedSourceToggle extends StatelessWidget {
   }
 }
 
+class HomeGridHeader extends StatelessWidget {
+  final FeedSource feedSource;
+  final ValueChanged<FeedSource> onFeedSourceChanged;
+
+  const HomeGridHeader({
+    super.key,
+    required this.feedSource,
+    required this.onFeedSourceChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = context.accentCobalt;
+    final headline = AppTheme.display(
+      TextStyle(
+        fontSize: 30,
+        height: 1.08,
+        letterSpacing: -0.5,
+        color: context.textPrimary,
+      ),
+    );
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text.rich(
+            TextSpan(
+              children: [
+                const TextSpan(text: 'מה נמצא\n'),
+                TextSpan(
+                  text: 'בשבילך',
+                  style: TextStyle(color: accent),
+                ),
+                const TextSpan(text: ' היום'),
+              ],
+            ),
+            style: headline,
+          ),
+          const SizedBox(height: 14),
+          Material(
+            color: context.cardSurface,
+            borderRadius: BorderRadius.circular(26),
+            elevation: 0,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(26),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SearchPage()),
+              ),
+              child: Container(
+                height: 52,
+                padding: const EdgeInsets.symmetric(horizontal: 18),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(26),
+                  border: Border.all(color: context.hairlineSoft),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.search_rounded,
+                      size: 21,
+                      color: context.textPrimary,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'מה מחפשים? ספה, אופניים, אייפון...',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: context.textSecondary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            clipBehavior: Clip.none,
+            child: Row(
+              children: [
+                _HeaderChip(
+                  label: 'בשבילך',
+                  selected: feedSource == FeedSource.forYou,
+                  onTap: () => onFeedSourceChanged(FeedSource.forYou),
+                ),
+                const SizedBox(width: 8),
+                _HeaderChip(
+                  label: 'עוקב',
+                  selected: feedSource == FeedSource.following,
+                  onTap: () => onFeedSourceChanged(FeedSource.following),
+                ),
+                const SizedBox(width: 8),
+                _HeaderChip(
+                  label: 'מבצעים',
+                  icon: Icons.local_offer_outlined,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const DealsPage()),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                _HeaderChip(
+                  label: 'על המפה',
+                  icon: Icons.map_outlined,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const ProductMapPage()),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+}
+
+class _HeaderChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final IconData? icon;
+  final VoidCallback onTap;
+
+  const _HeaderChip({
+    required this.label,
+    required this.onTap,
+    this.selected = false,
+    this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bg = selected ? context.textPrimary : context.cardSurface;
+    final fg = selected ? context.pageBackground : context.textPrimary;
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        height: 36,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: selected ? Colors.transparent : context.hairline,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              Icon(icon, size: 16, color: fg),
+              const SizedBox(width: 6),
+            ],
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: fg,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _ProductCard extends ConsumerWidget {
   final ProductModel product;
 
@@ -916,13 +1135,9 @@ class _ProductCard extends ConsumerWidget {
                                             ),
                                             child: Container(
                                               padding: const EdgeInsets.all(12),
-                                              decoration: BoxDecoration(
+                                              decoration: const BoxDecoration(
                                                 color: AppColors.lightSurface,
                                                 shape: BoxShape.circle,
-                                                border: Border.all(
-                                                  color: AppColors.borderStrong,
-                                                  width: 1.5,
-                                                ),
                                               ),
                                               child: AnimatedSwitcher(
                                                 duration: const Duration(
@@ -943,7 +1158,7 @@ class _ProductCard extends ConsumerWidget {
                                                   color: isLiked
                                                       ? AppColors.coral
                                                       : AppColors
-                                                            .lightTextSecondary,
+                                                            .lightTextPrimary,
                                                   size: 28,
                                                 ),
                                               ),
@@ -994,8 +1209,8 @@ class _ProductCard extends ConsumerWidget {
                                   horizontal: 10,
                                   vertical: 5,
                                 ),
-                                decoration: const BoxDecoration(
-                                  color: AppColors.cobalt,
+                                decoration: BoxDecoration(
+                                  color: AppColors.ink.withValues(alpha: 0.72),
                                   borderRadius: AppRadius.chipR,
                                 ),
                                 child: const Row(
@@ -1035,51 +1250,47 @@ class _ProductCard extends ConsumerWidget {
                         Container(
                               clipBehavior: Clip.hardEdge,
                               padding: const EdgeInsets.all(14),
-                              decoration: BoxDecoration(
+                              decoration: const BoxDecoration(
                                 color: AppColors.lightSurface,
                                 borderRadius: AppRadius.cardR,
-                                border: Border.all(
-                                  color: AppColors.borderStrong,
-                                  width: 1.5,
-                                ),
-                                boxShadow: AppColors.offsetShadow(alpha: 0.30),
                               ),
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    product.title,
-                                    style: const TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppColors.lightTextPrimary,
-                                    ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Align(
-                                    alignment: Alignment.centerRight,
-                                    child: Container(
-                                      decoration: const BoxDecoration(
-                                        color: AppColors.sunDeep,
-                                        borderRadius: AppRadius.chipR,
-                                      ),
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 10,
-                                        vertical: 4,
-                                      ),
-                                      child: Text(
-                                        '₪${product.price.toStringAsFixed(0)}',
-                                        style: const TextStyle(
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.w800,
-                                          color: Colors.white,
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          product.title,
+                                          style: const TextStyle(
+                                            fontSize: 17,
+                                            height: 1.3,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.lightTextPrimary,
+                                          ),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
-                                    ),
+                                      const SizedBox(width: 12),
+                                      CardPrice(
+                                        price: product.price,
+                                        fontSize: 22,
+                                        color: AppColors.lightTextPrimary,
+                                      ),
+                                    ],
                                   ),
+                                  if (product.isDemo) ...[
+                                    const SizedBox(height: 8),
+                                    const Align(
+                                      alignment:
+                                          AlignmentDirectional.centerStart,
+                                      child: DemoItemChip(),
+                                    ),
+                                  ],
                                   const SizedBox(height: 6),
                                   const SizedBox(height: 6),
                                   Row(
@@ -1142,9 +1353,11 @@ class _ProductGridView extends ConsumerWidget {
   final VoidCallback onNearBottom;
   final ScrollController controller;
   final VoidCallback onPullToRefresh;
+  final Widget? header;
 
   const _ProductGridView({
     super.key,
+    this.header,
     required this.products,
     required this.onNearBottom,
     required this.controller,
@@ -1245,9 +1458,11 @@ class _ProductGridView extends ConsumerWidget {
           slivers: [
             SliverPadding(
               padding: EdgeInsets.only(
-                top: MediaQuery.of(context).padding.top + 60,
+                top: MediaQuery.of(context).padding.top + 56,
               ),
             ),
+
+            if (header != null) SliverToBoxAdapter(child: header),
 
             const SliverToBoxAdapter(child: StoriesBar()),
 
@@ -1365,9 +1580,9 @@ class _GridProductCard extends ConsumerWidget {
                         right: 8,
                         child: Container(
                           padding: const EdgeInsets.all(5),
-                          decoration: const BoxDecoration(
-                            color: AppColors.cobalt,
-                            borderRadius: AppRadius.chipR,
+                          decoration: BoxDecoration(
+                            color: AppColors.ink.withValues(alpha: 0.72),
+                            shape: BoxShape.circle,
                           ),
                           child: const Icon(
                             Icons.play_arrow_rounded,
@@ -1377,8 +1592,8 @@ class _GridProductCard extends ConsumerWidget {
                         ),
                       ),
                     Positioned(
-                      top: 8,
-                      left: 8,
+                      top: 10,
+                      left: 10,
                       child: Material(
                         color: Colors.transparent,
                         child: InkWell(
@@ -1391,14 +1606,12 @@ class _GridProductCard extends ConsumerWidget {
                               : null,
                           borderRadius: BorderRadius.circular(50),
                           child: Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
+                            width: 32,
+                            height: 32,
+                            alignment: Alignment.center,
+                            decoration: const BoxDecoration(
                               color: AppColors.lightSurface,
                               shape: BoxShape.circle,
-                              border: Border.all(
-                                color: AppColors.lightBorder,
-                                width: 1,
-                              ),
                             ),
                             child: AnimatedSwitcher(
                               duration: const Duration(milliseconds: 300),
@@ -1414,79 +1627,50 @@ class _GridProductCard extends ConsumerWidget {
                                 key: ValueKey(isLiked),
                                 color: isLiked
                                     ? AppColors.coral
-                                    : AppColors.lightTextSecondary,
-                                size: 18,
+                                    : AppColors.lightTextPrimary,
+                                size: 17,
                               ),
                             ),
                           ),
                         ),
                       ),
                     ),
-                    Positioned(
-                      bottom: 0,
-                      left: 0,
-                      child: Container(
-                        decoration: const BoxDecoration(
-                          color: AppColors.sunDeep,
-                          borderRadius: BorderRadius.only(
-                            topRight: Radius.circular(AppRadius.chip),
-                          ),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 5,
-                        ),
-                        child: Text(
-                          '₪${product.price.toStringAsFixed(0)}',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
-                          ),
-                        ),
+                    if (product.isDemo)
+                      const Positioned(
+                        bottom: 10,
+                        right: 10,
+                        child: DemoItemChip(),
                       ),
-                    ),
                   ],
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    CardPrice(price: product.price),
+                    const SizedBox(height: 3),
                     Text(
                       product.title,
                       style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                        height: 1.35,
                         color: context.textPrimary,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.location_on_outlined,
-                          size: 12,
-                          color: context.textTertiary,
-                        ),
-                        const SizedBox(width: 2),
-                        Expanded(
-                          child: Text(
-                            cityLabel,
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: context.textTertiary,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
+                    const SizedBox(height: 3),
+                    Text(
+                      cityLabel,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: context.textSecondary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 6),
                   ],
                 ),
               ),
@@ -1559,16 +1743,18 @@ class _FeaturedProductCard extends ConsumerWidget {
                           horizontal: 8,
                           vertical: 3,
                         ),
-                        decoration: const BoxDecoration(
-                          color: AppColors.cobalt,
+                        decoration: BoxDecoration(
+                          color: context.isDark
+                              ? const Color(0xFF12261E)
+                              : const Color(0xFFE2F1EA),
                           borderRadius: AppRadius.chipR,
                         ),
-                        child: const Text(
-                          'מומלץ',
+                        child: Text(
+                          product.isDemo ? 'מומלץ · מוצר לדוגמה' : 'מומלץ',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: context.accentCobalt,
                             fontSize: 11,
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
@@ -1576,32 +1762,16 @@ class _FeaturedProductCard extends ConsumerWidget {
                       Text(
                         product.title,
                         style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                          height: 1.35,
+                          fontWeight: FontWeight.w500,
                           color: context.textPrimary,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 10),
-                      Container(
-                        decoration: const BoxDecoration(
-                          color: AppColors.sunDeep,
-                          borderRadius: AppRadius.chipR,
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        child: Text(
-                          '₪${product.price.toStringAsFixed(0)}',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
+                      CardPrice(price: product.price, fontSize: 19),
                       const SizedBox(height: 6),
                     ],
                   ),

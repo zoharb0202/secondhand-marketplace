@@ -33,16 +33,16 @@ class GlassContainer extends StatelessWidget {
       decoration: BoxDecoration(
         color:
             backgroundColor ??
-            (isDark ? const Color(0xFF182238) : AppColors.surface),
+            (isDark ? const Color(0xFF17191B) : AppColors.surface),
         borderRadius: borderRadius,
         border: Border.all(
           color:
               borderColor ??
-              (isDark ? const Color(0xFF2A3550) : AppColors.border),
+              (isDark ? const Color(0xFF2B2E31) : AppColors.border),
           width: borderWidth,
         ),
         boxShadow: AppColors.offsetShadow(
-          color: isDark ? const Color(0xFF5B7BFF) : AppColors.cobalt,
+          color: isDark ? const Color(0xFF34B886) : AppColors.cobalt,
           alpha: isDark ? 0.20 : 0.10,
         ),
       ),

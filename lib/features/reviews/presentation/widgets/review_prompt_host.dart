@@ -365,7 +365,7 @@ class _ReviewPromptCardState extends State<_ReviewPromptCard>
                         'איך הייתה הרכישה?',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.rubik(
+                        style: GoogleFonts.ibmPlexSansHebrew(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
                           color: AppColors.textPrimary,
@@ -376,7 +376,7 @@ class _ReviewPromptCardState extends State<_ReviewPromptCard>
                         _bodyText(),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.rubik(
+                        style: GoogleFonts.ibmPlexSansHebrew(
                           fontSize: 13,
                           height: 1.3,
                           color: AppColors.textSecondary,
@@ -410,7 +410,7 @@ class _ReviewPromptCardState extends State<_ReviewPromptCard>
                   ),
                   child: Text(
                     'לא עכשיו',
-                    style: GoogleFonts.rubik(
+                    style: GoogleFonts.ibmPlexSansHebrew(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
                     ),
@@ -434,7 +434,7 @@ class _ReviewPromptCardState extends State<_ReviewPromptCard>
                   ),
                   child: Text(
                     'כתוב ביקורת',
-                    style: GoogleFonts.rubik(
+                    style: GoogleFonts.ibmPlexSansHebrew(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
                     ),

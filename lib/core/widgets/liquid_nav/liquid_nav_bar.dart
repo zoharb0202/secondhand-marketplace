@@ -105,13 +105,15 @@ class _LiquidNavBarState extends State<LiquidNavBar>
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final barFill = isDark ? context.cardSurface : AppColors.lightSurface;
-    final frameColor = isDark ? context.hairline : AppColors.borderStrong;
+    final frameColor = isDark ? context.hairline : AppColors.lightBorder;
     final shadowTint = isDark ? AppColors.cobaltLift : AppColors.cobalt;
-    final barShadowAlpha = isDark ? 0.20 : 0.10;
+    final barShadowAlpha = isDark ? 0.30 : 0.16;
     final discShadowAlpha = isDark ? 0.26 : 0.18;
     final restColor = context.textSecondary;
     final addRestColor = context.accentCobalt;
-    final labelColor = context.accentCobalt;
+    final labelColor = context.textPrimary;
+    final discFill = isDark ? AppColors.darkTextPrimary : AppColors.ink;
+    final discIcon = isDark ? AppColors.darkBackground : Colors.white;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -136,9 +138,9 @@ class _LiquidNavBarState extends State<LiquidNavBar>
                   notchCenterX: cx,
                   notchRadius: geometry.notchRadius,
                   cornerRadius: AppRadius.card,
-                  side: BorderSide(color: frameColor, width: 1.5),
+                  side: BorderSide(color: frameColor, width: 1),
                 );
-                final ringOuterRadius = geometry.discRadius + 0.75;
+                final ringOuterRadius = geometry.discRadius + 0.5;
 
                 return Stack(
                   clipBehavior: Clip.none,
@@ -195,10 +197,7 @@ class _LiquidNavBarState extends State<LiquidNavBar>
                             child: DecoratedBox(
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: frameColor,
-                                  width: 1.5,
-                                ),
+                                border: Border.all(color: frameColor, width: 1),
                                 boxShadow: AppColors.offsetShadow(
                                   color: shadowTint,
                                   alpha: discShadowAlpha,
@@ -215,14 +214,16 @@ class _LiquidNavBarState extends State<LiquidNavBar>
                             child: Stack(
                               clipBehavior: Clip.none,
                               children: [
-                                const ColoredBox(color: AppColors.cobalt),
+                                Positioned.fill(
+                                  child: ColoredBox(color: discFill),
+                                ),
                                 _NavIcons(
                                   items: widget.items,
                                   geometry: geometry,
                                   indexValue: indexValue,
                                   selectedIndex: widget.selectedIndex,
-                                  iconColorOf: (_) => AppColors.textOnPrimary,
-                                  badgeRingColor: AppColors.textOnPrimary,
+                                  iconColorOf: (_) => discIcon,
+                                  badgeRingColor: discIcon,
                                   showLabels: false,
                                   labelColor: labelColor,
                                   useActiveGlyph: true,

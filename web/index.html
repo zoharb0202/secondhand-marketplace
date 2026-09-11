@@ -6,7 +6,7 @@
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Secondhand Marketplace: a Hebrew-first marketplace for buying and selling used items locally.">
-  <meta name="theme-color" content="#2749C9">
+  <meta name="theme-color" content="#F6F6F4">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="Secondhand Marketplace">
@@ -15,14 +15,21 @@
   <title>Secondhand Marketplace</title>
   <link rel="manifest" href="manifest.json">
   <style>
-    html, body { margin: 0; height: 100%; background: #F6F7FB; }
-    #loader { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; font-family: system-ui, sans-serif; color: #2749C9; }
-    #loader span { width: 36px; height: 36px; border: 3px solid #D9DEF3; border-top-color: #2749C9; border-radius: 50%; animation: spin .8s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    html, body { margin: 0; height: 100%; background: #F6F6F4; }
+    #loader { position: fixed; inset: 0; display: flex; flex-direction: column; gap: 14px; align-items: center; justify-content: center; }
+    #loader svg { animation: breathe 1.4s ease-in-out infinite; }
+    #loader i { width: 64px; height: 2px; border-radius: 2px; background: #E4E4E0; overflow: hidden; position: relative; }
+    #loader i::after { content: ""; position: absolute; inset: 0; width: 40%; background: #0E7C57; animation: slide 1.1s ease-in-out infinite; }
+    @keyframes breathe { 50% { transform: scale(.94); } }
+    @keyframes slide { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
+    @media (prefers-color-scheme: dark) { html, body { background: #0D0F10; } #loader i { background: #2B2E31; } }
   </style>
 </head>
 <body>
-  <div id="loader"><span></span></div>
+  <div id="loader" aria-label="טוען">
+    <svg width="48" height="48" viewBox="0 0 30 30" aria-hidden="true"><rect x="2" y="7" width="17" height="17" rx="5" fill="#101214"/><rect x="11" y="2" width="17" height="17" rx="5" fill="#0E7C57"/><clipPath id="lc"><rect x="2" y="7" width="17" height="17" rx="5"/></clipPath><rect x="11" y="2" width="17" height="17" rx="5" fill="#0A4F37" clip-path="url(#lc)"/></svg>
+    <i></i>
+  </div>
   <script>
     window.addEventListener('flutter-first-frame', function () {
       var l = document.getElementById('loader'); if (l) l.remove();

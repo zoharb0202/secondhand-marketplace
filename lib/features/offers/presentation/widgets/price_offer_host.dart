@@ -375,7 +375,7 @@ class _PriceOfferPromptCardState extends State<_PriceOfferPromptCard>
                               'הצעת מחיר חדשה',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.rubik(
+                              style: GoogleFonts.ibmPlexSansHebrew(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.textPrimary,
@@ -386,7 +386,7 @@ class _PriceOfferPromptCardState extends State<_PriceOfferPromptCard>
                               _bodyText(),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.rubik(
+                              style: GoogleFonts.ibmPlexSansHebrew(
                                 fontSize: 13,
                                 height: 1.3,
                                 color: AppColors.textSecondary,
@@ -411,7 +411,7 @@ class _PriceOfferPromptCardState extends State<_PriceOfferPromptCard>
                     const SizedBox(height: AppSpacing.xxs),
                     Text(
                       'ועוד ${widget.additionalCount} הצעות חדשות ממתינות לך',
-                      style: GoogleFonts.rubik(
+                      style: GoogleFonts.ibmPlexSansHebrew(
                         fontSize: 12,
                         color: AppColors.textTertiary,
                       ),
@@ -430,7 +430,7 @@ class _PriceOfferPromptCardState extends State<_PriceOfferPromptCard>
                         ),
                         child: Text(
                           'לא עכשיו',
-                          style: GoogleFonts.rubik(
+                          style: GoogleFonts.ibmPlexSansHebrew(
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
                           ),
@@ -454,7 +454,7 @@ class _PriceOfferPromptCardState extends State<_PriceOfferPromptCard>
                         ),
                         child: Text(
                           'צפייה בהצעה',
-                          style: GoogleFonts.rubik(
+                          style: GoogleFonts.ibmPlexSansHebrew(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
                           ),

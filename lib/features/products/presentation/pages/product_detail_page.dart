@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import '../widgets/product_card.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -11,7 +12,6 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/theme_colors.dart';
 import '../../../../core/widgets/gradient_button.dart';
 import '../../../../core/widgets/stream_error_view.dart';
-import '../../../../core/widgets/price_text.dart';
 import '../../../../shared/models/product_model.dart';
 import '../../../../shared/models/image_variants.dart';
 import '../../../../shared/models/cart_model.dart';
@@ -392,15 +392,12 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
                           Row(
                             children: [
                               Expanded(
-                                child: priceText(
-                                  product.price,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .displaySmall
-                                      ?.copyWith(
-                                        color: AppColors.sunDeep,
-                                        fontSize: 32,
-                                      ),
+                                child: Align(
+                                  alignment: AlignmentDirectional.centerStart,
+                                  child: CardPrice(
+                                    price: product.price,
+                                    fontSize: 30,
+                                  ),
                                 ),
                               ),
                               if (_isSellerAvailableNow && !product.isSold)

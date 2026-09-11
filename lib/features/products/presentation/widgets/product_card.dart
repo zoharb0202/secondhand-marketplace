@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/theme_colors.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/gradient_border_card.dart';
 import '../../../../shared/models/product_model.dart';
 import '../../../../shared/models/image_variants.dart';
@@ -152,14 +153,12 @@ class _ProductCardState extends State<ProductCard>
                         child: GestureDetector(
                           onTap: widget.onLike,
                           child: Container(
-                            padding: const EdgeInsets.all(7),
-                            decoration: BoxDecoration(
+                            width: 32,
+                            height: 32,
+                            alignment: Alignment.center,
+                            decoration: const BoxDecoration(
                               color: AppColors.lightSurface,
                               shape: BoxShape.circle,
-                              border: Border.all(
-                                color: AppColors.lightBorder,
-                                width: 1,
-                              ),
                             ),
                             child: AnimatedSwitcher(
                               duration: const Duration(milliseconds: 300),
@@ -176,7 +175,7 @@ class _ProductCardState extends State<ProductCard>
                                 size: 18,
                                 color: widget.isLiked
                                     ? AppColors.coral
-                                    : AppColors.lightTextSecondary,
+                                    : AppColors.lightTextPrimary,
                               ),
                             ),
                           ),
@@ -184,12 +183,10 @@ class _ProductCardState extends State<ProductCard>
                       ),
 
                     if (widget.product.isDemo)
-                      Positioned(
-                        top: _isSellerAvailableNow && !widget.product.isSold
-                            ? 38
-                            : 10,
+                      const Positioned(
+                        bottom: 10,
                         left: 10,
-                        child: const DemoItemChip(),
+                        child: DemoItemChip(),
                       ),
 
                     if (_isSellerAvailableNow && !widget.product.isSold)
@@ -197,7 +194,7 @@ class _ProductCardState extends State<ProductCard>
                         top: 10,
                         left: 10,
                         child: Container(
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                             color: AppColors.palm,
                             borderRadius: AppRadius.chipR,
                           ),
@@ -259,51 +256,28 @@ class _ProductCardState extends State<ProductCard>
                           },
                         ),
                       ),
-
-                    Positioned(
-                      bottom: 0,
-                      left: 0,
-                      child: Container(
-                        decoration: const BoxDecoration(
-                          color: AppColors.sunDeep,
-                          borderRadius: BorderRadius.only(
-                            topRight: Radius.circular(AppRadius.chip),
-                          ),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 5,
-                        ),
-                        child: Text(
-                          '${widget.product.price.toStringAsFixed(0)} ₪',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ),
-                    ),
                   ],
                 ),
               ),
 
               Padding(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    CardPrice(price: widget.product.price),
+                    const SizedBox(height: 3),
                     Text(
                       widget.product.title,
                       style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                        height: 1.35,
                         color: context.textPrimary,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
                     Row(
                       children: [
                         Container(
@@ -401,17 +375,69 @@ class DemoItemChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.62),
-        borderRadius: BorderRadius.circular(6),
+        color: AppColors.ink.withValues(alpha: 0.72),
+        borderRadius: BorderRadius.circular(20),
       ),
       child: const Text(
         'מוצר לדוגמה',
         style: TextStyle(
           color: Colors.white,
           fontSize: 10,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w500,
+          height: 1.3,
         ),
       ),
+    );
+  }
+}
+
+String formatShekel(num price) {
+  final digits = price.round().toString();
+  final buf = StringBuffer();
+  for (var i = 0; i < digits.length; i++) {
+    if (i > 0 && (digits.length - i) % 3 == 0) buf.write(',');
+    buf.write(digits[i]);
+  }
+  return '$buf ₪';
+}
+
+class CardPrice extends StatelessWidget {
+  final num price;
+  final double fontSize;
+  final Color? color;
+
+  const CardPrice({
+    super.key,
+    required this.price,
+    this.fontSize = 17,
+    this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = color ?? context.textPrimary;
+    final number = formatShekel(price);
+    return Text.rich(
+      TextSpan(
+        children: [
+          TextSpan(
+            text: number.substring(0, number.length - 2),
+            style: AppTheme.display(
+              TextStyle(fontSize: fontSize, height: 1.15, color: c),
+            ),
+          ),
+          TextSpan(
+            text: ' ₪',
+            style: TextStyle(
+              fontSize: fontSize * 0.78,
+              fontWeight: FontWeight.w500,
+              color: c,
+            ),
+          ),
+        ],
+      ),
+      textDirection: TextDirection.ltr,
+      maxLines: 1,
     );
   }
 }

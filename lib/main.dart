@@ -8,7 +8,6 @@ import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'core/constants/app_constants.dart';
-import 'core/constants/feature_flags.dart';
 import 'core/utils/maps_loader.dart';
 import 'core/theme/app_theme.dart';
 import 'core/router/app_router.dart';
@@ -165,13 +164,7 @@ class _MyAppState extends ConsumerState<MyApp> {
           textDirection: TextDirection.rtl,
           child: Stack(
             children: [
-              FeatureFlags.demoMode
-                  ? Banner(
-                      message: 'DEMO',
-                      location: BannerLocation.topStart,
-                      child: child!,
-                    )
-                  : child!,
+              child!,
               const SafeArea(child: EmailVerificationBanner()),
             ],
           ),

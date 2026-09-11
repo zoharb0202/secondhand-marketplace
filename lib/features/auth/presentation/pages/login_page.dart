@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/app_logo.dart';
+import '../../../../core/theme/app_theme.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -382,40 +384,61 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 ),
                 const SizedBox(height: 24),
 
-                Center(
-                      child: AnimatedGradientContainer(
-                        borderRadius: BorderRadius.circular(28),
-                        padding: const EdgeInsets.all(20),
-                        duration: const Duration(seconds: 5),
-                        child: Icon(
-                          Icons.shopping_bag_outlined,
-                          size: 48,
-                          color: Colors.white,
-                        ),
-                      ),
-                    )
-                    .animate()
-                    .scale(
-                      begin: const Offset(0.5, 0.5),
-                      end: const Offset(1, 1),
-                      duration: 600.ms,
-                      curve: Curves.elasticOut,
-                    )
-                    .fadeIn(duration: 300.ms),
-                const SizedBox(height: 24),
+                const Center(
+                  child: AppLogo(markSize: 44, fontSize: 26, showTagline: true),
+                ).animate().fadeIn(duration: 300.ms),
+                const SizedBox(height: 32),
 
-                Center(
-                  child: GradientText(
-                    _isLogin ? 'התחברות' : 'הרשמה',
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w800,
+                Text(
+                  _isLogin ? 'טוב לראות אותך' : 'פותחים חשבון',
+                  style: AppTheme.display(
+                    TextStyle(
+                      fontSize: 30,
+                      height: 1.1,
+                      color: context.textPrimary,
                     ),
-                    textAlign: TextAlign.center,
                   ),
-                ).animate().fadeIn(delay: 200.ms, duration: 400.ms),
+                ).animate().fadeIn(delay: 100.ms, duration: 300.ms),
+                const SizedBox(height: 6),
+                Text(
+                  _isLogin
+                      ? 'קונים ומוכרים יד שנייה, ואוספים קרוב לבית.'
+                      : 'כמה פרטים ואפשר להתחיל למכור.',
+                  style: TextStyle(fontSize: 15, color: context.textSecondary),
+                ),
 
-                const SizedBox(height: 36),
+                if (FeatureFlags.demoMode) ...[
+                  const SizedBox(height: 24),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: context.isDark
+                          ? const Color(0xFF12261E)
+                          : const Color(0xFFE2F1EA),
+                      borderRadius: AppRadius.cardR,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          'זו גרסת דמו. אפשר להיכנס בלי הרשמה ולנסות הכל: לחפש, לשמור, לשלוח הודעה ולהזמין. המוצרים והמוכרים לדוגמה בלבד.',
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            height: 1.5,
+                            color: context.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        ElevatedButton(
+                          onPressed: _isLoading ? null : _handleGuestSignIn,
+                          child: const Text('כניסה כאורח'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+
+                const SizedBox(height: 28),
 
                 Container(
                       padding: const EdgeInsets.all(24),
@@ -749,15 +772,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   ),
                   label: _isLogin ? 'התחבר עם Google' : 'הרשם עם Google',
                 ).animate().fadeIn(delay: 500.ms, duration: 400.ms),
-
-                if (FeatureFlags.demoMode) ...[
-                  const SizedBox(height: 12),
-                  _SocialLoginButton(
-                    onPressed: _isLoading ? null : _handleGuestSignIn,
-                    icon: const Icon(Icons.person_outline, size: 22),
-                    label: 'כניסה כאורח (דמו)',
-                  ).animate().fadeIn(delay: 550.ms, duration: 400.ms),
-                ],
 
                 if (_isLogin) ...[
                   const SizedBox(height: 12),

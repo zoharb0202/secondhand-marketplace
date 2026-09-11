@@ -83,6 +83,20 @@ Android also needs `android/app/google-services.json` and `MAPS_API_KEY=...` in
 `android/local.properties`. Card payments are off by default. Turn them on with
 `FeatureFlags.paymentEnabled`.
 
+## Live demo build
+
+The web build can run as a public demo: guests can sign in without an account, a
+DEMO banner is shown, and guest data is wiped every night.
+
+```bash
+flutter build web --dart-define=DEMO_MODE=true --dart-define=MAPS_API_KEY=...
+firebase deploy --only hosting
+```
+
+For the nightly cleanup, set `DEMO_MODE=true` in `functions/.env`. Also turn on
+**Anonymous** sign-in in Firebase Authentication. Only use this on a dedicated demo
+project.
+
 ## Tests
 
 ```bash

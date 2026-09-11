@@ -74,9 +74,6 @@ functions/.runtimeconfig.json
 **/macos/Flutter/Generated.xcconfig
 **/macos/Runner/GeneratedPluginRegistrant.*
 
-# Web
-/web/
-
 # Windows
 **/windows/flutter/ephemeral/
 **/windows/flutter/generated_plugin_registrant.*

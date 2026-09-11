@@ -121,18 +121,20 @@ class AuthRepository {
   Future<UserModel?> signInWithGoogle() async {
     _profileBootstrapInFlight++;
     try {
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) return null;
-
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
-
-      final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-
-      final userCredential = await _auth.signInWithCredential(credential);
+      final UserCredential userCredential;
+      if (kIsWeb) {
+        userCredential = await _auth.signInWithPopup(GoogleAuthProvider());
+      } else {
+        final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+        if (googleUser == null) return null;
+        final GoogleSignInAuthentication googleAuth =
+            await googleUser.authentication;
+        final credential = GoogleAuthProvider.credential(
+          accessToken: googleAuth.accessToken,
+          idToken: googleAuth.idToken,
+        );
+        userCredential = await _auth.signInWithCredential(credential);
+      }
 
       if (userCredential.user != null) {
         final userDoc = await _firestore
@@ -182,13 +184,37 @@ class AuthRepository {
     }
   }
 
+  Future<UserModel?> signInAsGuest() async {
+    _profileBootstrapInFlight++;
+    try {
+      final userCredential = await _auth.signInAnonymously();
+      final user = userCredential.user;
+      if (user == null) return null;
+      final now = DateTime.now();
+      final guest = UserModel(
+        id: user.uid,
+        email: '',
+        displayName: 'אורח ${user.uid.substring(0, 4).toUpperCase()}',
+        createdAt: now,
+        termsAcceptedAt: now,
+        isStoreOpen: true,
+        sellerAvailability: SellerAvailability.online,
+        role: UserRole.customer,
+      );
+      final outcome = await _createProfileIfAbsent(user.uid, guest);
+      return outcome.profile;
+    } finally {
+      _profileBootstrapInFlight--;
+    }
+  }
+
   Future<void> signOut() async {
     await _guarded(
       'notification token',
       () => NotificationCoordinator.instance.prepareForSignOut(),
     );
 
-    await Future.wait([_auth.signOut(), _googleSignIn.signOut()]);
+    await Future.wait([_auth.signOut(), if (!kIsWeb) _googleSignIn.signOut()]);
   }
 
   Future<void> _guarded(String what, Future<void> Function() action) async {

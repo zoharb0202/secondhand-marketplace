@@ -1588,3 +1588,7 @@ Object.assign(exports, require('./src/pickupOrders')({
   assertStaff,
   webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || (_legacyStripeCfg && _legacyStripeCfg.webhook_secret),
 }));
+
+if (process.env.DEMO_MODE === 'true') {
+  Object.assign(exports, require('./src/demoReset')({functions, admin}));
+}

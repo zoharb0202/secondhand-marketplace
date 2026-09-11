@@ -7,6 +7,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/theme_colors.dart';
 import '../../../../core/widgets/animated_gradient.dart';
 import '../../../../core/widgets/gradient_button.dart';
+import '../../../../core/constants/feature_flags.dart';
 import '../../../../core/services/providers/biometric_provider.dart';
 import '../providers/auth_provider.dart';
 import '../../../../core/constants/app_constants.dart';
@@ -132,6 +133,25 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       if (mounted) {
         setState(() => _isLoading = false);
       }
+    }
+  }
+
+  Future<void> _handleGuestSignIn() async {
+    setState(() => _isLoading = true);
+    try {
+      await ref.read(authControllerProvider.notifier).signInAsGuest();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_getErrorMessage(e.toString())),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -729,6 +749,15 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   ),
                   label: _isLogin ? 'התחבר עם Google' : 'הרשם עם Google',
                 ).animate().fadeIn(delay: 500.ms, duration: 400.ms),
+
+                if (FeatureFlags.demoMode) ...[
+                  const SizedBox(height: 12),
+                  _SocialLoginButton(
+                    onPressed: _isLoading ? null : _handleGuestSignIn,
+                    icon: const Icon(Icons.person_outline, size: 22),
+                    label: 'כניסה כאורח (דמו)',
+                  ).animate().fadeIn(delay: 550.ms, duration: 400.ms),
+                ],
 
                 if (_isLogin) ...[
                   const SizedBox(height: 12),

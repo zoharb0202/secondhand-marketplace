@@ -25,6 +25,10 @@ class HomeGate extends ConsumerWidget {
       return const _SuspendedAccountScreen();
     }
 
+    if (authUser.isAnonymous) {
+      return const LegalConsentGate(child: MainNavigation());
+    }
+
     final addressesAsync = ref.watch(savedAddressesProvider(authUser.uid));
 
     return LegalConsentGate(

@@ -7,6 +7,9 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'core/constants/app_constants.dart';
+import 'core/constants/feature_flags.dart';
+import 'core/utils/maps_loader.dart';
 import 'core/theme/app_theme.dart';
 import 'core/router/app_router.dart';
 import 'core/utils/firebase_options.dart';
@@ -46,16 +49,23 @@ void main() async {
     if (kDebugMode) print('⚠️ App Check activation failed: $e');
   }
 
-  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  if (!kIsWeb) {
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
-  FlutterError.onError = (errorDetails) {
-    FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
-  };
+    FlutterError.onError = (errorDetails) {
+      FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
+    };
 
-  PlatformDispatcher.instance.onError = (error, stack) {
-    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-    return true;
-  };
+    PlatformDispatcher.instance.onError = (error, stack) {
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+      return true;
+    };
+  }
+
+  if (kIsWeb) {
+    const mapsKey = String.fromEnvironment('MAPS_API_KEY');
+    if (mapsKey.isNotEmpty) await loadGoogleMapsScript(mapsKey);
+  }
 
   if (!kIsWeb) {
     try {
@@ -137,7 +147,7 @@ class _MyAppState extends ConsumerState<MyApp> {
     final isDarkMode = ref.watch(themeModeProvider);
 
     return MaterialApp.router(
-      title: 'MarketPlace',
+      title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
@@ -155,7 +165,13 @@ class _MyAppState extends ConsumerState<MyApp> {
           textDirection: TextDirection.rtl,
           child: Stack(
             children: [
-              child!,
+              FeatureFlags.demoMode
+                  ? Banner(
+                      message: 'DEMO',
+                      location: BannerLocation.topStart,
+                      child: child!,
+                    )
+                  : child!,
               const SafeArea(child: EmailVerificationBanner()),
             ],
           ),

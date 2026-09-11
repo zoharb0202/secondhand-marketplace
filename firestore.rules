@@ -1,0 +1,630 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdminClaim() {
+      return isAuthenticated() && request.auth.token.admin == true;
+    }
+
+    function isAdminUser() {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isSupportAgent() {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'supportAgent';
+    }
+
+    function isSupportOrAdmin() {
+      return isAdminUser() || isSupportAgent();
+    }
+
+    function isNotSuspended() {
+      return !exists(/databases/$(database)/documents/users/$(request.auth.uid)) ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid))
+          .data.get('isActive', true) == true;
+    }
+
+    function isChatParticipant(chatId) {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/chats/$(chatId)) &&
+        (get(/databases/$(database)/documents/chats/$(chatId)).data.buyerId == request.auth.uid ||
+         get(/databases/$(database)/documents/chats/$(chatId)).data.sellerId == request.auth.uid);
+    }
+
+    match /users/{userId} {
+      function serverOwnedUserKeys() {
+        return ['role', 'isAdmin', 'rating', 'totalRatings', 'totalReviews',
+                'sellerRating', 'sellerReviewCount', 'totalSales', 'totalPurchases',
+                'isSellerVerified', 'isActive', 'sellerFaults',
+                'termsAcceptedAt', 'termsVersion', 'privacyVersion',
+                'lastConsentRecordId'];
+      }
+
+      allow get: if isAuthenticated();
+      allow list: if isAdminClaim();
+
+      allow create: if isAdminClaim() ||
+        (isOwner(userId) &&
+         (!('role' in request.resource.data) || request.resource.data.role == 'customer') &&
+         (!('isAdmin' in request.resource.data) || request.resource.data.isAdmin == false) &&
+         (!('rating' in request.resource.data) || request.resource.data.rating == 0) &&
+         (!('totalRatings' in request.resource.data) || request.resource.data.totalRatings == 0) &&
+         (!('totalReviews' in request.resource.data) || request.resource.data.totalReviews == 0) &&
+         (!('sellerRating' in request.resource.data) || request.resource.data.sellerRating == 0) &&
+         (!('sellerReviewCount' in request.resource.data) || request.resource.data.sellerReviewCount == 0) &&
+         (!('totalSales' in request.resource.data) || request.resource.data.totalSales == 0) &&
+         !('totalPurchases' in request.resource.data) &&
+         (!('isSellerVerified' in request.resource.data) || request.resource.data.isSellerVerified == false) &&
+         (!('isActive' in request.resource.data) || request.resource.data.isActive == true));
+
+      allow update: if isAdminClaim() ||
+        (isOwner(userId) &&
+         !request.resource.data.diff(resource.data).affectedKeys().hasAny(serverOwnedUserKeys()));
+
+      allow delete: if isAdminClaim();
+    }
+
+    match /products/{productId} {
+      function existingLikes() {
+        return 'likedByUserIds' in resource.data ? resource.data.likedByUserIds : [];
+      }
+
+      function retailFieldsServerOnly() {
+        return !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(['isBargain', 'bargainDiscountPercent', 'retailEstimate',
+                   'retailEstimateSource', 'retailEstimateStatus',
+                   'retailKeyHash', 'retailStampVersion', 'retailStampedAt']);
+      }
+
+      function ownerUnchanged() {
+        return !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(['sellerId']);
+      }
+
+      function engagementFieldsServerOnly() {
+        return !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(['trendScore', 'viewCount', 'likeCount', 'likedByUserIds',
+                    'imageVariants']);
+      }
+
+      function stockClaimOrder() {
+        return getAfter(/databases/$(database)/documents/orders/$(request.resource.data.lastStockClaimOrderId)).data;
+      }
+      function stockClaimQty() {
+        return 'quantityByProductId' in stockClaimOrder()
+          ? stockClaimOrder().quantityByProductId.get(productId, 1) : 1;
+      }
+      function reservationAllowsClaim(orderId) {
+        return resource.data.get('isReserved', false) == false ||
+          !(resource.data.get('reservedUntil', null) is timestamp) ||
+          resource.data.reservedUntil < request.time ||
+          getAfter(/databases/$(database)/documents/orders/$(orderId)).data.get('offerId', '') ==
+            resource.data.get('reservedForOfferId', '');
+      }
+
+      function existingStockClaims() {
+        return 'stockClaimedOrderIds' in resource.data ? resource.data.stockClaimedOrderIds : [];
+      }
+
+      allow read: if true;
+      allow create: if isAuthenticated() && isNotSuspended() &&
+        request.resource.data.sellerId == request.auth.uid &&
+        (!('stockTotal' in request.resource.data) ||
+         (request.resource.data.stockTotal is int &&
+          request.resource.data.stockTotal >= 2 &&
+          request.resource.data.stockTotal <= 99 &&
+          request.resource.data.stockRemaining == request.resource.data.stockTotal)) &&
+        !request.resource.data.keys().hasAny(
+            ['isBargain', 'bargainDiscountPercent', 'retailEstimate',
+             'retailEstimateSource', 'retailEstimateStatus',
+             'retailKeyHash', 'retailStampVersion', 'retailStampedAt']);
+      allow update: if isAuthenticated() &&
+        ((resource.data.sellerId == request.auth.uid && ownerUnchanged() &&
+          retailFieldsServerOnly() && engagementFieldsServerOnly()) ||
+         isAdminUser() ||
+         (resource.data.isSold == false &&
+          resource.data.get('isActive', true) == true &&
+          reservationAllowsClaim(request.resource.data.soldViaOrderId) &&
+          (!('stockTotal' in resource.data) || resource.data.stockTotal == null) &&
+          request.resource.data.isSold == true &&
+          request.resource.data.isActive == false &&
+          request.resource.data.soldViaOrderId is string &&
+          getAfter(/databases/$(database)/documents/orders/$(request.resource.data.soldViaOrderId)).data.buyerId == request.auth.uid &&
+          getAfter(/databases/$(database)/documents/orders/$(request.resource.data.soldViaOrderId)).data.sellerId == resource.data.sellerId &&
+          (getAfter(/databases/$(database)/documents/orders/$(request.resource.data.soldViaOrderId)).data.productId == productId ||
+           ('productIds' in getAfter(/databases/$(database)/documents/orders/$(request.resource.data.soldViaOrderId)).data &&
+            getAfter(/databases/$(database)/documents/orders/$(request.resource.data.soldViaOrderId)).data.productIds.hasAny([productId]))) &&
+          (!('isReserved' in request.resource.data) || request.resource.data.isReserved == false) &&
+          (!('reservedForOfferId' in request.resource.data) || request.resource.data.reservedForOfferId == null) &&
+          (!('reservedUntil' in request.resource.data) || request.resource.data.reservedUntil == null) &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(
+              ['isSold', 'isActive', 'isReserved', 'reservedForOfferId', 'reservedUntil',
+               'soldViaOrderId'])) ||
+         (resource.data.isSold == false &&
+          resource.data.isActive == true &&
+          (!('isReserved' in resource.data) || resource.data.isReserved == false) &&
+          'stockRemaining' in resource.data &&
+          resource.data.stockRemaining is int &&
+          request.resource.data.lastStockClaimOrderId is string &&
+          stockClaimOrder().buyerId == request.auth.uid &&
+          stockClaimOrder().sellerId == resource.data.sellerId &&
+          (stockClaimOrder().productId == productId ||
+           ('productIds' in stockClaimOrder() &&
+            stockClaimOrder().productIds.hasAny([productId]))) &&
+          stockClaimQty() is int &&
+          stockClaimQty() >= 1 &&
+          stockClaimQty() <= 10 &&
+          stockClaimQty() <= resource.data.stockRemaining &&
+          request.resource.data.stockRemaining == resource.data.stockRemaining - stockClaimQty() &&
+          request.resource.data.isSold == (request.resource.data.stockRemaining == 0) &&
+          request.resource.data.isActive == (request.resource.data.stockRemaining > 0) &&
+          !existingStockClaims().hasAny([request.resource.data.lastStockClaimOrderId]) &&
+          request.resource.data.stockClaimedOrderIds.hasAll(existingStockClaims()) &&
+          request.resource.data.stockClaimedOrderIds.hasAny([request.resource.data.lastStockClaimOrderId]) &&
+          request.resource.data.stockClaimedOrderIds.size() == existingStockClaims().size() + 1 &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(
+              ['isSold', 'isActive', 'stockRemaining',
+               'stockClaimedOrderIds', 'lastStockClaimOrderId'])) ||
+         (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likedByUserIds', 'likeCount']) &&
+          request.resource.data.likeCount == request.resource.data.likedByUserIds.size() &&
+          (
+            (!existingLikes().hasAny([request.auth.uid]) &&
+             request.resource.data.likedByUserIds.hasAll(existingLikes()) &&
+             request.resource.data.likedByUserIds.hasAll([request.auth.uid]) &&
+             request.resource.data.likedByUserIds.size() == existingLikes().size() + 1) ||
+            (existingLikes().hasAny([request.auth.uid]) &&
+             existingLikes().hasAll(request.resource.data.likedByUserIds) &&
+             !request.resource.data.likedByUserIds.hasAny([request.auth.uid]) &&
+             request.resource.data.likedByUserIds.size() == existingLikes().size() - 1)
+          )));
+      allow delete: if isAuthenticated() &&
+        resource.data.sellerId == request.auth.uid;
+    }
+
+    match /orders/{orderId} {
+      function isBuyer() {
+        return resource.data.buyerId == request.auth.uid;
+      }
+
+      function isSeller() {
+        return resource.data.sellerId == request.auth.uid;
+      }
+
+      function transition(from, to) {
+        return resource.data.status == from && request.resource.data.status == to;
+      }
+
+      function allowedTransition() {
+        return (isSeller() && transition('paid', 'readyForPickup')) ||
+          (isSeller() && transition('pending', 'readyForPickup') &&
+           resource.data.paymentMethod == 'pay_on_pickup') ||
+          (isBuyer() && transition('readyForPickup', 'completed')) ||
+          (isBuyer() && transition('paid', 'completed')) ||
+          ((isBuyer() || isSeller()) && transition('pending', 'cancelled')) ||
+          (isSeller() && transition('paid', 'cancelled')) ||
+          (isSeller() && transition('readyForPickup', 'cancelled'));
+      }
+
+      allow read: if isAuthenticated() &&
+        (isBuyer() || isSeller() || isAdminClaim() || isSupportOrAdmin());
+
+      allow create: if isAuthenticated() && isNotSuspended() &&
+        request.resource.data.buyerId == request.auth.uid &&
+        request.resource.data.sellerId != request.auth.uid &&
+        request.resource.data.status == 'pending' &&
+        request.resource.data.paymentMethod in ['credit_card', 'pay_on_pickup'] &&
+        request.resource.data.createdAt is timestamp &&
+        request.resource.data.createdAt > request.time - duration.value(10, 'm') &&
+        request.resource.data.createdAt < request.time + duration.value(10, 'm') &&
+        !request.resource.data.keys().hasAny(
+            ['pendingChargeIntentId', 'refundId', 'refundedAt', 'pickupRevealedAt', 'disputeStatus',
+             'disputeTicketId', 'disputeOpenedAt', 'disputeIssueType', 'disputeResolution',
+             'disputeResolvedBy', 'disputeResolvedAt', 'statusBeforeDispute']) &&
+        request.resource.data.get('paidAt', null) == null &&
+        request.resource.data.get('paymentId', null) == null &&
+        request.resource.data.get('stripePaymentIntentId', null) == null;
+
+      allow update: if isAdminClaim() ||
+        (isAuthenticated() && (isBuyer() || isSeller()) &&
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(
+             ['status', 'updatedAt', 'statusHistory', 'readyAt', 'completedAt', 'cancelledAt']) &&
+         allowedTransition());
+    }
+
+    match /product_daily_stats/{productId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+
+    match /trending/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid;
+    }
+
+    match /fcm_queue/{queueId} {
+      allow read: if false;
+      allow create: if isAuthenticated();
+      allow update, delete: if false;
+    }
+
+    match /notification_preferences/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    match /saved_searches/{searchId} {
+      allow read: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() &&
+        request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid;
+    }
+
+    match /stories/{storyId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() &&
+        request.resource.data.sellerId == request.auth.uid;
+      allow update, delete: if isAdminClaim() ||
+        (isAuthenticated() && resource.data.sellerId == request.auth.uid);
+    }
+
+    match /moderation_flags/{flagId} {
+      allow read: if isAdminClaim();
+      allow write: if false;
+    }
+
+    match /ai_cache/{docId} {
+      allow read, write: if false;
+    }
+    match /rate_limits/{docId} {
+      allow read, write: if false;
+    }
+
+    match /retail_estimates/{keyHash} {
+      allow read, write: if false;
+    }
+
+    match /brand_catalog/{docId} {
+      allow get: if isAuthenticated();
+      allow list: if false;
+      allow write: if false;
+    }
+
+    match /brand_suggestions/{suggestionId} {
+      allow read: if isAdminClaim() || isAdminUser();
+      allow write: if false;
+    }
+
+    match /signal_events/{eventId} {
+      allow read, write: if false;
+    }
+
+    match /signal_rollup_state/{dateKey} {
+      allow read, write: if false;
+    }
+    match /price_stats/{keyHash} {
+      allow read, write: if false;
+    }
+    match /synonym_candidates/{pairKey} {
+      allow read, write: if false;
+    }
+    match /demand_signals_internal/{clusterId} {
+      allow read, write: if false;
+    }
+
+    match /search_synonyms/{docId} {
+      allow read, write: if false;
+    }
+
+    match /demand_signals/{clusterId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+
+    match /category_corrections/{aiCategory} {
+      allow read: if isAdminClaim();
+      allow write: if false;
+    }
+
+    match /addresses/{addressId} {
+      allow read: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() &&
+        request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid;
+    }
+
+    match /ai_events/{eventId} {
+      allow read, write: if false;
+    }
+
+    match /ai_usage/{docId} {
+      allow read: if isAdminClaim() || isSupportOrAdmin();
+      allow write: if false;
+    }
+
+    match /ai_usage_daily/{dateKey} {
+      allow read: if isAdminClaim() || isSupportOrAdmin();
+      allow write: if false;
+    }
+
+    match /legal_documents/{documentId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /consent_records/{recordId} {
+      allow read: if isAuthenticated() &&
+        (resource.data.userId == request.auth.uid || isSupportOrAdmin());
+      allow create, update, delete: if false;
+    }
+
+    match /price_offers/{offerId} {
+      allow read: if isAuthenticated() &&
+        (resource.data.buyerId == request.auth.uid ||
+         resource.data.sellerId == request.auth.uid);
+      allow create: if isAuthenticated() && isNotSuspended() &&
+        request.resource.data.buyerId == request.auth.uid &&
+        request.resource.data.status == 'pending';
+      allow update: if isAuthenticated() &&
+        (resource.data.sellerId == request.auth.uid ||
+         (resource.data.buyerId == request.auth.uid &&
+          resource.data.status == 'accepted' &&
+          (request.resource.data.status == 'completed' ||
+           request.resource.data.status == 'expired') &&
+          request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['status', 'orderId', 'completedAt', 'expiredAt', 'updatedAt']) &&
+          request.resource.data.offeredPrice == resource.data.offeredPrice) ||
+         (resource.data.buyerId == request.auth.uid &&
+          resource.data.status == 'countered' &&
+          request.resource.data.status == 'rejected' &&
+          request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['status', 'rejectedAt']) &&
+          request.resource.data.offeredPrice == resource.data.offeredPrice));
+    }
+
+    match /reports/{reportId} {
+      allow create: if isAuthenticated() &&
+        request.resource.data.reporterId == request.auth.uid &&
+        request.resource.data.status == 'pending';
+      allow read, update, delete: if isAdminClaim();
+    }
+
+    match /reviews/{reviewId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() &&
+        request.resource.data.reviewerId == request.auth.uid &&
+        request.resource.data.rating is number &&
+        request.resource.data.rating >= 1 &&
+        request.resource.data.rating <= 5 &&
+        request.resource.data.orderId is string &&
+        get(/databases/$(database)/documents/orders/$(request.resource.data.orderId)).data.buyerId == request.auth.uid;
+      allow update, delete: if isAuthenticated() &&
+        resource.data.reviewerId == request.auth.uid;
+    }
+
+    match /payment_intents/{intentId} {
+      allow read: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() &&
+        request.resource.data.userId == request.auth.uid;
+      allow update: if isAdminClaim();
+    }
+
+    match /seller_reviews/{reviewId} {
+      allow read: if true;
+
+      allow create, update, delete: if false;
+    }
+
+    match /seller_rating_summaries/{sellerId} {
+      allow read: if true;
+      allow write: if isAdminUser();
+    }
+
+    match /support_tickets/{ticketId} {
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        isSupportOrAdmin()
+      );
+
+      function ticketServerOnlyKeys() {
+        return ['orderId', 'sellerId', 'issueType', 'priority', 'orderIssue',
+                'assignedAdminId', 'assignedAdminName', 'adminNotes', 'resolvedAt',
+                'assignedAgentId', 'assignedAgentName', 'assignedAt', 'assignedBy',
+                'internalNotesCount', 'lastInternalNoteAt',
+                'resolutionNote', 'closedAt'];
+      }
+
+      allow create: if isAuthenticated() &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.status == 'open' &&
+        !request.resource.data.keys().hasAny(ticketServerOnlyKeys());
+
+      allow update: if (isSupportOrAdmin() ||
+         (isAuthenticated() && resource.data.userId == request.auth.uid)) &&
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['messages', 'updatedAt']);
+
+      allow delete: if isAdminUser();
+    }
+
+    match /support_tickets/{ticketId}/internal_notes/{noteId} {
+      allow read: if isSupportOrAdmin();
+      allow create, update, delete: if false;
+    }
+
+    match /support_tickets/{ticketId}/audit_log/{entryId} {
+      allow read: if isSupportOrAdmin();
+      allow create, update, delete: if false;
+    }
+
+    match /users/{userId}/chat_templates/{templateId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    match /users/{userId}/search_history/{historyId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    match /users/{userId}/notifications_settings/{settingId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    match /users/{userId}/private/{document} {
+
+      function contactShapeOk() {
+        return request.resource.data.keys()
+            .hasOnly(['email', 'phoneNumber', 'address', 'location', 'updatedAt']) &&
+          (!('email' in request.resource.data) ||
+           request.resource.data.email is string) &&
+          (!('phoneNumber' in request.resource.data) ||
+           request.resource.data.phoneNumber is string) &&
+          (!('address' in request.resource.data) ||
+           request.resource.data.address is string) &&
+          (!('location' in request.resource.data) ||
+           request.resource.data.location is latlng);
+      }
+
+      allow read: if isOwner(userId) || isAdminClaim();
+
+      allow create, update: if isAdminClaim() ||
+        (isOwner(userId) && (
+          document == 'device' ||
+          (document == 'contact' && contactShapeOk())
+        ));
+
+      allow delete: if isAdminClaim();
+    }
+
+    match /user_interactions/{interactionId} {
+      allow read: if isAuthenticated() &&
+        (resource.data.userId == request.auth.uid || isAdminClaim());
+      allow create: if isAuthenticated() &&
+        request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAdminUser();
+    }
+
+    match /user_activities/{userId} {
+      allow read: if isOwner(userId) || isAdminClaim();
+      allow write: if isOwner(userId);
+    }
+
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if isAdminUser();
+    }
+
+    match /chats/{chatId} {
+      function keepsThreadIdentity() {
+        return !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(['buyerId', 'sellerId', 'productId', 'buyerName', 'sellerName']);
+      }
+
+      allow get: if isAuthenticated() && (
+        resource == null ||
+        resource.data.buyerId == request.auth.uid ||
+        resource.data.sellerId == request.auth.uid
+      );
+
+      allow list: if isAuthenticated() && (
+        resource.data.buyerId == request.auth.uid ||
+        resource.data.sellerId == request.auth.uid
+      );
+
+      allow create: if isAuthenticated() && isNotSuspended() &&
+        (request.resource.data.buyerId == request.auth.uid ||
+         request.resource.data.sellerId == request.auth.uid) &&
+        (request.resource.data.get('productId', '') == '' ||
+         (exists(/databases/$(database)/documents/products/$(request.resource.data.productId)) &&
+          get(/databases/$(database)/documents/products/$(request.resource.data.productId))
+            .data.get('sellerId', '') == request.resource.data.get('sellerId', '')));
+
+      allow update: if isAuthenticated() &&
+        (resource.data.buyerId == request.auth.uid ||
+         resource.data.sellerId == request.auth.uid) &&
+        keepsThreadIdentity();
+
+      allow delete: if isAdminUser();
+    }
+
+    match /messages/{messageId} {
+      allow read: if isChatParticipant(resource.data.chatId);
+
+      allow create: if isAuthenticated() && isNotSuspended() &&
+        request.resource.data.senderId == request.auth.uid &&
+        isChatParticipant(request.resource.data.chatId) &&
+        request.resource.data.keys().hasOnly([
+          'chatId', 'senderId', 'senderName', 'senderPhotoUrl', 'content',
+          'type', 'imageUrl', 'timestamp', 'isRead', 'readBy', 'attachments'
+        ]) &&
+        request.resource.data.get('readBy', []).hasOnly([request.auth.uid]);
+
+      allow update: if isChatParticipant(resource.data.chatId) &&
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['readBy', 'isRead']) &&
+        request.resource.data.get('readBy', [])
+          .hasAll(resource.data.get('readBy', [])) &&
+        request.resource.data.get('readBy', [])
+          .removeAll(resource.data.get('readBy', []))
+          .hasOnly([request.auth.uid]);
+
+      allow delete: if isAdminUser();
+    }
+
+    match /carts/{userId} {
+      allow read: if isOwner(userId);
+
+      allow write: if isOwner(userId);
+    }
+
+    match /alerts/{alertId} {
+      allow read: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid;
+
+      allow create: if isAuthenticated() &&
+        request.resource.data.userId == request.auth.uid;
+
+      allow update: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid;
+
+      allow delete: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid;
+    }
+
+    match /alert_matches/{matchId} {
+      allow read: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid;
+
+      allow create: if false;
+
+      allow update: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid;
+
+      allow delete: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid;
+    }
+
+  }
+}

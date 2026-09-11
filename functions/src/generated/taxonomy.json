@@ -1,0 +1,142 @@
+{
+  "_comment": "GENERATED — do not edit. Source of truth is lib/core/constants/categories.dart + enums.dart. Regenerate with: node functions/tools/generate_taxonomy.js",
+  "generator": "functions/tools/generate_taxonomy.js",
+  "sourceHash": "98e8adca5db66a5b",
+  "categoryOrder": [
+    "fashion",
+    "electronics",
+    "vehicles",
+    "real_estate",
+    "furniture",
+    "home_garden",
+    "fashion_beauty",
+    "sports",
+    "toys",
+    "kids",
+    "books",
+    "pets",
+    "services",
+    "jobs",
+    "other"
+  ],
+  "categories": {
+    "fashion": [
+      "men_clothing",
+      "women_clothing",
+      "shoes",
+      "bags",
+      "accessories",
+      "jewelry"
+    ],
+    "electronics": [
+      "smartphones",
+      "laptops",
+      "tablets",
+      "headphones",
+      "cameras",
+      "gaming",
+      "tv_audio",
+      "accessories"
+    ],
+    "vehicles": [
+      "cars",
+      "motorcycles",
+      "bicycles",
+      "scooters",
+      "parts",
+      "accessories"
+    ],
+    "real_estate": [
+      "apartments_for_sale",
+      "apartments_for_rent",
+      "commercial",
+      "roommates"
+    ],
+    "furniture": [
+      "living_room",
+      "bedroom",
+      "dining",
+      "office",
+      "kids_room",
+      "outdoor"
+    ],
+    "home_garden": [
+      "decor",
+      "kitchen",
+      "appliances",
+      "tools",
+      "garden",
+      "storage"
+    ],
+    "fashion_beauty": [
+      "makeup",
+      "skincare",
+      "haircare",
+      "perfumes",
+      "health"
+    ],
+    "sports": [
+      "gym_equipment",
+      "bikes",
+      "outdoor",
+      "water_sports",
+      "winter_sports",
+      "sportswear"
+    ],
+    "toys": [
+      "baby_toys",
+      "kids_toys",
+      "games",
+      "video_games",
+      "outdoor_toys"
+    ],
+    "kids": [
+      "baby_gear",
+      "strollers",
+      "car_seats",
+      "kids_furniture",
+      "kids_clothing",
+      "feeding"
+    ],
+    "books": [
+      "books",
+      "textbooks",
+      "comics",
+      "music",
+      "movies"
+    ],
+    "pets": [
+      "dogs",
+      "cats",
+      "accessories",
+      "food",
+      "other_pets"
+    ],
+    "services": [
+      "repairs",
+      "cleaning",
+      "moving",
+      "events",
+      "tutoring",
+      "other"
+    ],
+    "jobs": [
+      "full_time",
+      "part_time",
+      "freelance",
+      "internship"
+    ],
+    "other": [
+      "free_stuff",
+      "lost_found",
+      "miscellaneous"
+    ]
+  },
+  "conditions": [
+    "brandNew",
+    "likeNew",
+    "veryGood",
+    "good",
+    "fair"
+  ]
+}
